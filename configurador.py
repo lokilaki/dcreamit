@@ -127,8 +127,8 @@ def ligar_crealit():
 
 
 def main():
-    if not is_after_23():
-        return
+    #if not is_after_23():
+    #    return
     #connect_to_wifi()
     #time.sleep(5)
     #enable_ics()
