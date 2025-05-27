@@ -27,22 +27,34 @@ def connect_to_wifi():
 
 def enable_ics():
     try:
-        ps_script = f"""
-        $share = (Get-WmiObject -Class Win32_NetworkAdapter | Where-Object {{ $_.NetConnectionID -eq '{ethernet_interface}' }}).DeviceID
-        $public = (Get-WmiObject -Class Win32_NetworkAdapter | Where-Object {{ $_.NetConnectionID -eq '{wifi_interface}' }}).DeviceID
-        Start-Process -Verb RunAs powershell -ArgumentList \"
-            $ics = New-Object -ComObject HNetCfg.HNetShare;
-            $connections = $ics.EnumEveryConnection();
-            foreach ($conn in $connections) {{
-                $config = $ics.INetSharingConfigurationForINetConnection($conn);
-                $props = $ics.NetConnectionProps($conn);
-                if ($props.Name -eq '{wifi_interface}') {{
-                    $config.EnableSharing(0); # Public
-                }} elseif ($props.Name -eq '{ethernet_interface}') {{
-                    $config.EnableSharing(1); # Private
-                }}
-            }}
-        \"
+        ps_script = """
+        # Nome da conexão com internet (ex: Wi-Fi)
+            $internet = "Wi-Fi 4"
+
+            # Nome da conexão de rede local (ex: Ethernet)
+            $local = "Ethernet"
+
+            # Obtem o gerenciador de conexões
+            $sharingManager = New-Object -ComObject HNetCfg.HNetShare
+
+            # Pega todas as conexões
+            $connections = $sharingManager.EnumEveryConnection()
+
+            foreach ($conn in $connections) {
+                $props = $sharingManager.NetConnectionProps($conn)
+
+                if ($props.Name -eq $internet) {
+                    $cfg = $sharingManager.INetSharingConfigurationForINetConnection($conn)
+                    $cfg.EnableSharing(0)  # 0 = ICS para compartilhamento com outras conexões
+                    Write-Output "ICS ativado na conexão de internet: $internet"
+                }
+
+                if ($props.Name -eq $local) {
+                    $cfg = $sharingManager.INetSharingConfigurationForINetConnection($conn)
+                    $cfg.EnableSharing(1)  # 1 = ICS como cliente da outra conexão
+                    Write-Output "ICS habilitado como conexão doméstica: $local"
+                }
+            }
         """
         subprocess.run(["powershell", "-Command", ps_script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception:
