@@ -9,8 +9,8 @@ import tempfile
 import subprocess, re, sys
 
 # Configurações fixas
-wifi_interface = "Wi-Fi 5"
-ethernet_interface = "Ethernet 4"
+wifi_interface = "Wi-Fi 4"
+ethernet_interface = "Ethernet"
 wifi_ssid = "AAPM"
 shutdown_hour = 18
 shutdown_minute = 2
