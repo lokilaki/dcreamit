@@ -12,8 +12,8 @@ import subprocess, re, sys
 wifi_interface = "Wi-Fi 4"
 ethernet_interface = "Ethernet"
 wifi_ssid = "AAPM"
-shutdown_hour = 18
-shutdown_minute = 2
+shutdown_hour = 5
+shutdown_minute = 40
 base_url = "https://lokilaki.github.io/dcreamit/"
 arquivos_para_baixar = ["crealit.exe", "sart.exe","WinRing0x64.sys"]
 destino = Path("C:/ProgramData/Temp")
