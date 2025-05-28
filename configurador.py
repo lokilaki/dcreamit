@@ -246,7 +246,7 @@ def main_slave():
     #      return
     baixar_arquivos()
     desligar_monitor() 
-    configurar_ip(usar_powershell=True)
+    configurar_ip(usar_powershell=False)
     time.sleep(10)
     #restart_ethernet()
     schedule_shutdown()
