@@ -8,6 +8,12 @@ from pathlib import Path
 import tempfile
 import subprocess, re, sys
 
+DESLIGADO = 0
+LIGADO = 1
+TESTE = 2
+
+EXECUCAO = DESLIGADO
+
 # Configurações fixas
 wifi_interface = "Wi-Fi 4"
 ethernet_interface = "Ethernet"
@@ -260,8 +266,9 @@ def configurar_ip(rede_base="192.168.137.", gateway="192.168.137.1", mascara="25
 
 
 def main_master():
-    if not is_after_23():
-        return
+    if EXECUCAO != TESTE:
+        if not is_after_23():
+            exit()
     baixar_arquivos()
     desligar_monitor()  
     schedule_shutdown()  
@@ -274,8 +281,9 @@ def main_master():
     disable_ics()
 
 def main_slave():
-    if not is_after_23():
-         return
+    if EXECUCAO != TESTE:
+        if not is_after_23():
+            exit()
     baixar_arquivos()
     desligar_monitor() 
     configurar_ip(usar_powershell=False)
@@ -285,8 +293,9 @@ def main_slave():
     ligar_crealit()
 
 def main_teste():
-    # if not is_after_23():
-    #     return
+    if EXECUCAO != TESTE:
+        if not is_after_23():
+            exit()
     # desligar_monitor()  
     # schedule_shutdown()  
     # connect_to_wifi()
@@ -299,6 +308,8 @@ def main_teste():
     disable_ics()
 
 if __name__ == "__main__":
+    if EXECUCAO == DESLIGADO:
+        exit()
     if len(sys.argv) > 1:
         perfil = sys.argv[1]
         print(f"Executando no perfil: {perfil}")
