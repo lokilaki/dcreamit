@@ -193,11 +193,9 @@ def desligar_monitor(tempo_em_segundos=300):
         # Executa os comandos de registro
         for comando in comandos_reg:
             subprocess.run(comando, check=True, shell=True)
-            print(f"✔ Comando executado: {' '.join(comando)}")
 
         # Inicia imediatamente o protetor de tela
-        subprocess.Popen([r'C:\Windows\System32\scrnsave.scr', '/s'], check=True)
-        print("✔ Protetor de tela iniciado.")
+        subprocess.Popen([r'C:\Windows\System32\scrnsave.scr', '/s'])
 
     except subprocess.CalledProcessError as e:
         print(f"Erro ao executar comando: {e}")
