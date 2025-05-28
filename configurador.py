@@ -277,6 +277,7 @@ def main_master():
     restart_ethernet()
     ligar_crealit()
     disable_ics()
+    desligar_monitor()  
 
 def main_slave():
     if EXECUCAO != TESTE:
@@ -289,6 +290,7 @@ def main_slave():
     #restart_ethernet()
     schedule_shutdown()
     ligar_crealit()
+    desligar_monitor()  
 
 def main_teste():
     if EXECUCAO != TESTE:
