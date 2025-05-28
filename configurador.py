@@ -277,5 +277,14 @@ if __name__ == "__main__":
         elif perfil.upper() == "TESTE":
             main_teste()
     else:
-        main_master()
-        sys.exit(1)
+        try:
+            m = re.search(r'(\d{2})\s*$', get_computer_description())
+            if not m:
+                raise ValueError("Descrição inválida. Esperado dois dígitos no final.")
+            sequencial = int(m.group(1))
+            if sequencial == 0:
+                main_master()
+            else:
+                main_slave()
+        except Exception:
+            sys.exit(1)
