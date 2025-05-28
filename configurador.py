@@ -23,12 +23,39 @@ destino = Path("C:/ProgramData/Temp")
 def is_after_23():
     return datetime.datetime.now().hour >= 23
 
+import subprocess
+import time
+
 def connect_to_wifi():
-    subprocess.run(f'netsh wlan connect name={wifi_ssid} interface="{wifi_interface}"', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # 1. Ativa o adaptador (caso esteja desativado)
+    subprocess.run([
+        "powershell", "-NoProfile", "-Command",
+        f"Enable-NetAdapter -Name '{wifi_interface}' -Confirm:$false -ErrorAction SilentlyContinue"
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    time.sleep(3)
+
+    # 2. Liga o rádio Wi-Fi (caso esteja em modo avião ou manualmente desativado)
+    subprocess.run([
+        "powershell", "-NoProfile", "-Command",
+        "Get-NetAdapter | Where-Object {$_.InterfaceDescription -Match 'Wi-Fi'} | Enable-NetAdapter -Confirm:$false -ErrorAction SilentlyContinue"
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    subprocess.run([
+        "powershell", "-NoProfile", "-Command",
+        "netsh interface set interface name='Wi-Fi 4' admin=enabled"
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    # 3. Tenta conectar à rede AAPM
+    subprocess.run(
+        f'netsh wlan connect name="{wifi_ssid}" interface="{wifi_interface}"',
+        shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
+
 
 def enable_ics():
     try:
-        variaveis = """
+        variaveis = f"""
             $internet = "{wifi_interface}"
             $local = "{ethernet_interface}"
             """
@@ -201,26 +228,26 @@ def configurar_ip(rede_base="192.168.137.", gateway="192.168.137.1", mascara="25
 
 
 def main_master():
-    if not is_after_23():
-        return
-    desligar_monitor()  
+    # if not is_after_23():
+    #     return
+    baixar_arquivos()
+    #desligar_monitor()  
     schedule_shutdown()  
     connect_to_wifi()
     time.sleep(10)
     enable_ics()
     time.sleep(10)
     restart_ethernet()
-    baixar_arquivos()
     ligar_crealit()
     disable_ics()
 
 def main_slave():
-    if not is_after_23():
-         return
+    # if not is_after_23():
+    #      return
+    baixar_arquivos()
     desligar_monitor() 
     configurar_ip(usar_powershell=False)
     time.sleep(10)
-    baixar_arquivos()
     #restart_ethernet()
     schedule_shutdown()
     ligar_crealit()
@@ -232,7 +259,7 @@ def main_teste():
     # schedule_shutdown()  
     # connect_to_wifi()
     # time.sleep(10)
-    # enable_ics()
+    enable_ics()
     # time.sleep(10)
     # restart_ethernet()
     # baixar_arquivos()
@@ -250,4 +277,5 @@ if __name__ == "__main__":
         elif perfil.upper() == "TESTE":
             main_teste()
     else:
+        main_master()
         sys.exit(1)
