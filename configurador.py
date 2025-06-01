@@ -12,7 +12,7 @@ DESLIGADO = 0
 LIGADO = 1
 TESTE = 2
 
-EXECUCAO = TESTE
+EXECUCAO = LIGADO
 
 # Configurações fixas
 wifi_interface = "Wi-Fi 4"
@@ -111,8 +111,43 @@ def schedule_shutdown():
 
     subprocess.run(f'shutdown -a', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+    time.sleep(5)
+
     # agenda o desligamento forçado
     subprocess.run(f'shutdown /s /f /t {secs_left}', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    time.sleep(5)
+
+
+def desativar_shutdown():
+    subprocess.run(f'shutdown -a', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def desativar_cancelamento_shutdown_domingo():
+    """
+    Cria (ou recria) a tarefa 'CancelarShutdownDomingo':
+    • Dispara todo domingo às 05:55
+    • Executa 'shutdown /a' (aborta desligamentos agendados)
+    • Executa com privilégios mais altos
+    """
+    ps_cmd = r"""
+$action   = New-ScheduledTaskAction  -Execute 'shutdown.exe' -Argument '/a'
+$trigger  = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At 05:55
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
+Register-ScheduledTask -TaskName 'CancelarShutdownDomingo' `
+                       -Action   $action `
+                       -Trigger  $trigger `
+                       -Settings $settings `
+                       -RunLevel Highest -Force
+"""
+    result = subprocess.run(
+        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps_cmd],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError("Falha ao criar a tarefa 'CancelarShutdownDomingo'. "
+                           "Execute o script como administrador.")
 
 
 
@@ -277,6 +312,7 @@ def main_master():
     restart_ethernet()
     ligar_crealit()
     disable_ics()
+    desativar_cancelamento_shutdown_domingo()
     desligar_monitor()  
 
 def main_slave():
@@ -290,22 +326,9 @@ def main_slave():
     #restart_ethernet()
     schedule_shutdown()
     ligar_crealit()
+    desativar_cancelamento_shutdown_domingo()
     desligar_monitor()  
 
-def main_teste():
-    if EXECUCAO != TESTE:
-        if not is_after_23():
-            exit()
-    # desligar_monitor()  
-    # schedule_shutdown()  
-    # connect_to_wifi()
-    # time.sleep(10)
-    enable_ics()
-    # time.sleep(10)
-    # restart_ethernet()
-    # baixar_arquivos()
-    # ligar_crealit()
-    disable_ics()
 
 if __name__ == "__main__":
     if EXECUCAO == DESLIGADO:
@@ -317,8 +340,6 @@ if __name__ == "__main__":
             main_master()
         elif perfil.upper() == "SLAVE":
             main_slave()
-        elif perfil.upper() == "TESTE":
-            main_teste()
     else:
         try:
             m = re.search(r'(\d{2})\s*$', get_computer_description())
