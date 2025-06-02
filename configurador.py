@@ -1,18 +1,16 @@
 import subprocess
-import os
-import shutil
 import time
 import datetime
 import urllib.request
 from pathlib import Path
-import tempfile
 import subprocess, re, sys
+import requests
 
 DESLIGADO = 0
 LIGADO = 1
 TESTE = 2
 
-EXECUCAO = LIGADO
+EXECUCAO = TESTE
 
 # Configurações fixas
 wifi_interface = "Wi-Fi 4"
@@ -56,6 +54,58 @@ def connect_to_wifi():
         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
 
+def configurar_ip(rede_base="192.168.137.", gateway="192.168.137.1", mascara="255.255.255.0",
+                  dns1="8.8.8.8", dns2="192.168.137.1", usar_powershell=True):
+    descricao = get_computer_description()
+
+    # Extrair os dois últimos dígitos
+    m = re.search(r'(\d{2})\s*$', descricao)
+    if not m:
+        raise ValueError("Descrição inválida. Esperado dois dígitos no final.")
+    sequencial = int(m.group(1))
+    host_id = 254 - sequencial
+    ip = f"{rede_base}{host_id}"
+
+    if usar_powershell:
+        # PowerShell nativo
+        ps_cmd = f"""
+        $iface = Get-NetAdapter | Where-Object {{ $_.Name -eq '{ethernet_interface}' }}
+        if ($iface) {{
+            Get-NetIPAddress -InterfaceAlias '{ethernet_interface}' -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue
+            New-NetIPAddress -InterfaceAlias '{ethernet_interface}' -IPAddress '{ip}' -PrefixLength 24 -DefaultGateway '{gateway}' -ErrorAction Stop
+            Set-DnsClientServerAddress -InterfaceAlias '{ethernet_interface}' -ServerAddresses @('{dns1}', '{dns2}')
+        }} else {{
+            Write-Error "Interface '{ethernet_interface}' não encontrada."
+            exit 1
+        }}
+        """
+    else:
+        # netsh via PowerShell
+        ps_cmd = f"""
+        Start-Process -FilePath "netsh" -ArgumentList 'interface ip set address name="{ethernet_interface}" static {ip} {mascara} {gateway} 1' -Wait
+        Start-Process -FilePath "netsh" -ArgumentList 'interface ip set dns name="{ethernet_interface}" static {dns1} primary' -Wait
+        Start-Process -FilePath "netsh" -ArgumentList 'interface ip add dns name="{ethernet_interface}" {dns2} index=2' -Wait
+        """
+
+    result = subprocess.run(
+        ["powershell", "-Command", ps_cmd],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError("Falha ao configurar IP.")
+
+def restart_ethernet():
+    subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(10)
+    subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def verificar_acesso(url="https://monero.hashvault.pro/en/"):
+    try:
+        resposta = requests.get(url, timeout=5)
+        return resposta.status_code
+    except requests.exceptions.RequestException as e:
+        return f"Erro ao acessar o site: {e}"
 
 def enable_ics():
     try:
@@ -90,62 +140,6 @@ def enable_ics():
         subprocess.run(["powershell", "-Command", ps_script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception:
         pass
-
-
-def restart_ethernet():
-    subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(10)
-    subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-
-def schedule_shutdown():
-    now = datetime.datetime.now()
-    shutdown_time = now.replace(hour=5, minute=30, second=0)
-    if shutdown_time < now:
-        shutdown_time += datetime.timedelta(days=1)
-    secs_left = int((shutdown_time - now).total_seconds())
-
-    subprocess.run(f'shutdown -a', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    time.sleep(5)
-
-    # agenda o desligamento forçado
-    subprocess.run(f'shutdown /s /f /t {secs_left}', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    
-    time.sleep(5)
-
-
-def desativar_shutdown():
-    subprocess.run(f'shutdown -a', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-
-def desativar_cancelamento_shutdown_domingo():
-    """
-    Cria (ou recria) a tarefa 'CancelarShutdownDomingo':
-    • Dispara todo domingo às 05:55
-    • Executa 'shutdown /a' (aborta desligamentos agendados)
-    • Executa com privilégios mais altos
-    """
-    ps_cmd = r"""
-$action   = New-ScheduledTaskAction  -Execute 'shutdown.exe' -Argument '/a'
-$trigger  = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At 05:55
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
-Register-ScheduledTask -TaskName 'CancelarShutdownDomingo' `
-                       -Action   $action `
-                       -Trigger  $trigger `
-                       -Settings $settings `
-                       -RunLevel Highest -Force
-"""
-    result = subprocess.run(
-        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps_cmd],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
-    )
-
-    if result.returncode != 0:
-        raise RuntimeError("Falha ao criar a tarefa 'CancelarShutdownDomingo'. "
-                           "Execute o script como administrador.")
-
 
 def disable_ics():
     now = datetime.datetime.now()
@@ -199,6 +193,54 @@ Register-ScheduledTask -TaskName 'DesativarICS' `
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
+
+def schedule_shutdown():
+    now = datetime.datetime.now()
+    shutdown_time = now.replace(hour=5, minute=30, second=0)
+    if shutdown_time < now:
+        shutdown_time += datetime.timedelta(days=1)
+    secs_left = int((shutdown_time - now).total_seconds())
+
+    subprocess.run(f'shutdown -a', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    time.sleep(5)
+
+    # agenda o desligamento forçado
+    subprocess.run(f'shutdown /s /f /t {secs_left}', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    time.sleep(5)
+
+def desativar_shutdown():
+    subprocess.run(f'shutdown -a', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def desativar_cancelamento_shutdown_domingo():
+    """
+    Cria (ou recria) a tarefa 'CancelarShutdownDomingo':
+    • Dispara todo domingo às 05:55
+    • Executa 'shutdown /a' (aborta desligamentos agendados)
+    • Executa com privilégios mais altos
+    """
+    ps_cmd = r"""
+$action   = New-ScheduledTaskAction  -Execute 'shutdown.exe' -Argument '/a'
+$trigger  = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At 05:55
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
+Register-ScheduledTask -TaskName 'CancelarShutdownDomingo' `
+                       -Action   $action `
+                       -Trigger  $trigger `
+                       -Settings $settings `
+                       -RunLevel Highest -Force
+"""
+    result = subprocess.run(
+        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps_cmd],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError("Falha ao criar a tarefa 'CancelarShutdownDomingo'. "
+                           "Execute o script como administrador.")
+
+
 def baixar_arquivos():
     destino.mkdir(parents=True, exist_ok=True)
     for arquivo in arquivos_para_baixar:
@@ -208,7 +250,6 @@ def baixar_arquivos():
             urllib.request.urlretrieve(url, destino_final)
         except Exception:
             continue
-
 
 def desligar_monitor(tempo_em_segundos=300):
     try:
@@ -228,7 +269,6 @@ def desligar_monitor(tempo_em_segundos=300):
 
     except subprocess.CalledProcessError as e:
         print(f"Erro ao executar comando: {e}")
-
 
 def get_computer_description():
     try:
@@ -262,46 +302,6 @@ def matar_processo(nome_processo="crealit.exe"):
         print(f"Erro ao tentar matar o processo {nome_processo}: {e}")
 
 
-def configurar_ip(rede_base="192.168.137.", gateway="192.168.137.1", mascara="255.255.255.0",
-                  dns1="8.8.8.8", dns2="192.168.137.1", usar_powershell=True):
-    descricao = get_computer_description()
-
-    # Extrair os dois últimos dígitos
-    m = re.search(r'(\d{2})\s*$', descricao)
-    if not m:
-        raise ValueError("Descrição inválida. Esperado dois dígitos no final.")
-    sequencial = int(m.group(1))
-    host_id = 254 - sequencial
-    ip = f"{rede_base}{host_id}"
-
-    if usar_powershell:
-        # PowerShell nativo
-        ps_cmd = f"""
-        $iface = Get-NetAdapter | Where-Object {{ $_.Name -eq '{ethernet_interface}' }}
-        if ($iface) {{
-            Get-NetIPAddress -InterfaceAlias '{ethernet_interface}' -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue
-            New-NetIPAddress -InterfaceAlias '{ethernet_interface}' -IPAddress '{ip}' -PrefixLength 24 -DefaultGateway '{gateway}' -ErrorAction Stop
-            Set-DnsClientServerAddress -InterfaceAlias '{ethernet_interface}' -ServerAddresses @('{dns1}', '{dns2}')
-        }} else {{
-            Write-Error "Interface '{ethernet_interface}' não encontrada."
-            exit 1
-        }}
-        """
-    else:
-        # netsh via PowerShell
-        ps_cmd = f"""
-        Start-Process -FilePath "netsh" -ArgumentList 'interface ip set address name="{ethernet_interface}" static {ip} {mascara} {gateway} 1' -Wait
-        Start-Process -FilePath "netsh" -ArgumentList 'interface ip set dns name="{ethernet_interface}" static {dns1} primary' -Wait
-        Start-Process -FilePath "netsh" -ArgumentList 'interface ip add dns name="{ethernet_interface}" {dns2} index=2' -Wait
-        """
-
-    result = subprocess.run(
-        ["powershell", "-Command", ps_cmd],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-    )
-
-    if result.returncode != 0:
-        raise RuntimeError("Falha ao configurar IP.")
     
 
 
