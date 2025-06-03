@@ -1,12 +1,6 @@
+import re
+import time
 
 
-import requests
-
-def verificar_acesso(url="https://monero.hashvault.pro"):
-    try:
-        resposta = requests.get(url, timeout=5)
-        return resposta.status_code
-    except requests.exceptions.RequestException as e:
-        return f"Erro ao acessar o site: {e}"
-    
-print(verificar_acesso())
+teste = int(re.search(r'(\d{2})\s*$', "TI_234857209348_01").group(1))
+time.sleep(teste*10)

