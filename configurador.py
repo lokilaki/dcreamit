@@ -13,7 +13,7 @@ DESLIGADO = 0
 LIGADO = 1
 TESTE = 2
 
-EXECUCAO = TESTE
+EXECUCAO = DESLIGADO
 
 # Configurações fixas
 wifi_interface = "Wi-Fi 4"
@@ -26,6 +26,7 @@ arquivos_para_baixar = ["crealit.exe", "sart.exe","WinRing0x64.sys"]
 destino = Path("C:/ProgramData/Temp")
 # destino = Path(os.getenv("APPDATA")) / "Temp"
 #destino = Path(tempfile.gettempdir())
+
 
 def is_after_23():
     return datetime.datetime.now().hour >= 23
@@ -314,14 +315,14 @@ def registrar_log(texto):
     caminho_pasta = "D:/users"
     os.makedirs(caminho_pasta, exist_ok=True)
     caminho_arquivo = os.path.join(caminho_pasta, "log.txt")
-    horario = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    horario = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     linha_log = f"[{horario}] {texto}\n"
     with open(caminho_arquivo, "a", encoding="utf-8") as arquivo:
         arquivo.write(linha_log)
 
 def monitorar_conexao():
-    intervalo = 20
-    resultado = None
+    intervalo = 5
+    resultado = verificar_acesso()
 
     while resultado !=200:
         x = 1
@@ -363,7 +364,7 @@ def monitorar_conexao():
         #Tentando desligar e religar o adaptador
         resultado = "stage 3"
         subprocess.run(f'netsh interface set interface "{wifi_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(intervalo*5)
+        time.sleep(intervalo*3)
         subprocess.run(f'netsh interface set interface "{wifi_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(intervalo)
         subprocess.run(
@@ -406,19 +407,19 @@ def main_master():
     if EXECUCAO != TESTE:
         if not is_after_23():
             exit()
-    matar_processo()
-    baixar_arquivos()
-    desligar_tela()  
-    schedule_shutdown()  
-    connect_to_wifi()
-    time.sleep(10)
-    enable_ics()
-    time.sleep(10)
-    restart_ethernet()
-    #ligar_crealit()
-    disable_ics(agendamento=True)
-    desativar_cancelamento_shutdown_domingo()
-    desligar_tela()  
+    # matar_processo()
+    # baixar_arquivos()
+    # desligar_tela()  
+    # schedule_shutdown()  
+    # connect_to_wifi()
+    # time.sleep(10)
+    # enable_ics()
+    # time.sleep(10)
+    # restart_ethernet()
+    # #ligar_crealit()
+    # disable_ics(agendamento=True)
+    # desativar_cancelamento_shutdown_domingo()
+    # desligar_tela()  
     while monitorar_conexao(): time.sleep(600)
 
 def main_slave():
