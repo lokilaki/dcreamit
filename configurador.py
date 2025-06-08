@@ -13,7 +13,7 @@ DESLIGADO = 0
 LIGADO = 1
 TESTE = 2
 
-EXECUCAO = DESLIGADO
+EXECUCAO = LIGADO
 
 # Configurações fixas
 wifi_interface = "Wi-Fi 4"
