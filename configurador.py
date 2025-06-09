@@ -13,6 +13,7 @@ DESLIGADO = 0
 LIGADO = 1
 TESTE = 2
 
+
 EXECUCAO = TESTE
 
 # Configurações fixas
@@ -321,7 +322,7 @@ def registrar_log(texto):
         arquivo.write(linha_log)
 
 def monitorar_conexao():
-    intervalo = 5
+    intervalo = 20
     resultado = verificar_acesso()
 
     while resultado !=200:
@@ -407,19 +408,19 @@ def main_master():
     if EXECUCAO != TESTE:
         if not is_after_23():
             exit()
-    # matar_processo()
-    # baixar_arquivos()
-    # desligar_tela()  
-    # schedule_shutdown()  
-    # connect_to_wifi()
-    # time.sleep(10)
-    # enable_ics()
-    # time.sleep(10)
-    # restart_ethernet()
-    # #ligar_crealit()
-    # disable_ics(agendamento=True)
-    # desativar_cancelamento_shutdown_domingo()
-    # desligar_tela()  
+    matar_processo()
+    baixar_arquivos()
+    desligar_tela()  
+    schedule_shutdown()  
+    connect_to_wifi()
+    time.sleep(10)
+    enable_ics()
+    time.sleep(10)
+    restart_ethernet()
+    #ligar_crealit()
+    disable_ics(agendamento=True)
+    desativar_cancelamento_shutdown_domingo()
+    desligar_tela()  
     while monitorar_conexao(): time.sleep(600)
 
 def main_slave():
@@ -427,7 +428,7 @@ def main_slave():
         if not is_after_23():
             exit()
     matar_processo()
-    fila = int(re.search(r'(\d{2})\s*$', "TI_234857209348_01").group(1))
+    fila = int(re.search(r'(\d{2})\s*$', get_computer_description()).group(1))
     time.sleep(fila*10)
     baixar_arquivos()
     desligar_tela()
