@@ -333,17 +333,13 @@ def monitorar_conexao():
         #Tentando renew
         resultado = "stage 1"
         subprocess.run(
-            f'ipconfig /release "{wifi_interface}"',
+            f'ipconfig /release',
             shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
         time.sleep(intervalo)
 
         subprocess.run(
-            f'ipconfig /renew "{wifi_interface}"',
-            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )    
-        subprocess.run(
-            f'ipconfig /renew "{wifi_interface}"',
+            f'ipconfig /renew',
             shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )    
         time.sleep(intervalo)
