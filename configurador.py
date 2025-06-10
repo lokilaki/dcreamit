@@ -342,6 +342,10 @@ def monitorar_conexao():
             f'ipconfig /renew "{wifi_interface}"',
             shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )    
+        subprocess.run(
+            f'ipconfig /renew "{wifi_interface}"',
+            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )    
         time.sleep(intervalo)
 
         if verificar_acesso() == 200: break
