@@ -395,25 +395,25 @@ def monitorar_conexao():
 
         x+=1
 
-        if x>=4:
-            resultado = "stage 4"
-            disable_ics(agendamento=False)
-            time.sleep(intervalo)
-            subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            time.sleep(intervalo)
-            subprocess.run(f'netsh interface set interface "{wifi_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            time.sleep(intervalo)
-            subprocess.run(f'netsh interface set interface "{wifi_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            time.sleep(intervalo)
-            subprocess.run(
-                f'netsh wlan connect name="{wifi_ssid}" interface="{wifi_interface}"',
-                shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                )
-            time.sleep(intervalo)
-            subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            time.sleep(intervalo)
-            enable_ics()
-            if verificar_acesso() == 200: break
+        # if x>=4:
+        #     resultado = "stage 4"
+        #     disable_ics(agendamento=False)
+        #     time.sleep(intervalo)
+        #     subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        #     time.sleep(intervalo)
+        #     subprocess.run(f'netsh interface set interface "{wifi_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        #     time.sleep(intervalo)
+        #     subprocess.run(f'netsh interface set interface "{wifi_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        #     time.sleep(intervalo)
+        #     subprocess.run(
+        #         f'netsh wlan connect name="{wifi_ssid}" interface="{wifi_interface}"',
+        #         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        #         )
+        #     time.sleep(intervalo)
+        #     subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        #     time.sleep(intervalo)
+        #     enable_ics()
+        #     if verificar_acesso() == 200: break
 
 
     registrar_log(resultado)
