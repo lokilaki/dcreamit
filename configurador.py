@@ -425,7 +425,7 @@ def main_master():
     if EXECUCAO != TESTE:
         if not is_after_23():
             exit()
-    subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    #subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=disable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     matar_processo()
     baixar_arquivos()
