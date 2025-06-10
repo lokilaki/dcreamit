@@ -418,7 +418,7 @@ def main_master():
     # baixar_arquivos()
     # desligar_tela()  
     # schedule_shutdown()  
-    # connect_to_wifi()
+    connect_to_wifi()
     # time.sleep(10)
     # enable_ics()
     # time.sleep(10)
