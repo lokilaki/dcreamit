@@ -109,6 +109,7 @@ def restart_ethernet():
 def verificar_acesso(url="https://monero.hashvault.pro/"):
     try:
         with urllib.request.urlopen(url, timeout=5) as resposta:
+            print(resposta.status)
             return resposta.status
     except Exception as e:
         return f"0 : {e}"
