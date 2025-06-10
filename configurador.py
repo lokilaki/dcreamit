@@ -106,13 +106,27 @@ def restart_ethernet():
     subprocess.run(f'netsh interface set interface "{ethernet_interface}" admin=enable', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def verificar_acesso(url="https://monero.hashvault.pro/"):
+def verificar_acesso_old(url="https://monero.hashvault.pro/"):
     try:
         with urllib.request.urlopen(url, timeout=5) as resposta:
             print(resposta.status)
             return resposta.status
     except Exception as e:
         return f"0 : {e}"
+    
+import requests
+def verificar_acesso(url="https://monero.hashvault.pro/"):
+    try:
+        resposta = requests.get(url, timeout=5)
+        if resposta.status_code == 200:
+            print(f"Site {url} está acessível.")
+            return resposta.status_code
+        else:
+            print(f"Site {url} respondeu com status {resposta.status_code}.")
+            return resposta.status_code
+    except requests.RequestException as e:
+        print(f"Erro ao acessar o site {url}: {e}")
+        return {e}
 
 
 def enable_ics():
