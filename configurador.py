@@ -115,7 +115,7 @@ def verificar_acesso_old(url="https://monero.hashvault.pro/"):
         return f"0 : {e}"
     
 import requests
-def verificar_acesso(url="https://monero.hashvault.pro/"):
+def verificar_acesso(url="http://monero.hashvault.pro/"):
     try:
         resposta = requests.get(url, timeout=5)
         if resposta.status_code == 200:
