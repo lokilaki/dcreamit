@@ -410,19 +410,23 @@ def main_master():
     if EXECUCAO != TESTE:
         if not is_after_23():
             exit()
-    matar_processo()
-    baixar_arquivos()
-    desligar_tela()  
-    schedule_shutdown()  
-    connect_to_wifi()
-    time.sleep(10)
-    enable_ics()
-    time.sleep(10)
-    restart_ethernet()
-    #ligar_crealit()
-    disable_ics(agendamento=True)
-    desativar_cancelamento_shutdown_domingo()
-    desligar_tela()  
+    subprocess.run(
+    f'netsh wlan disconnect interface="{ethernet_interface}"',
+    shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
+    # matar_processo()
+    # baixar_arquivos()
+    # desligar_tela()  
+    # schedule_shutdown()  
+    # connect_to_wifi()
+    # time.sleep(10)
+    # enable_ics()
+    # time.sleep(10)
+    # restart_ethernet()
+    # #ligar_crealit()
+    # disable_ics(agendamento=True)
+    # desativar_cancelamento_shutdown_domingo()
+    # desligar_tela()  
     while monitorar_conexao(): time.sleep(600)
 
 def main_slave():
