@@ -437,7 +437,7 @@ def main_master():
     time.sleep(10)
     restart_ethernet()
     #ligar_crealit()
-    disable_ics(agendamento=True)
+    #disable_ics(agendamento=True)
     desativar_cancelamento_shutdown_domingo()
     desligar_tela()  
     while monitorar_conexao(): time.sleep(600)
