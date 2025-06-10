@@ -336,12 +336,14 @@ def monitorar_conexao():
             f'ipconfig /release',
             shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
+        print("release")
         time.sleep(intervalo)
 
         subprocess.run(
             f'ipconfig /renew',
             shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )    
+        print("renew")
         time.sleep(intervalo)
 
         if verificar_acesso() == 200: break
