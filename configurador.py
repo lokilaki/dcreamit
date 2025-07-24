@@ -45,17 +45,19 @@ def get_computer_description():
     except Exception:
         return "sem_descricao"
 
-def ligar_crealit():
+def executar_arquivos():
     for arquivo in arquivos_para_baixar:
         subprocess.Popen(f'cmd /c start python "{destino}\\{arquivo}"', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def main_master():
     baixar_arquivos()
+    executar_arquivos()
 
 
 def main_slave():
     baixar_arquivos()
+    executar_arquivos()
 
 
 
