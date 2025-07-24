@@ -461,7 +461,6 @@ def main_slave():
 
 
 if __name__ == "__main__":
-    time.sleep(10000)
     if EXECUCAO == DESLIGADO:
         exit()
     if len(sys.argv) > 1:
