@@ -14,7 +14,7 @@ LIGADO = 1
 TESTE = 2
 
 
-EXECUCAO = LIGADO
+EXECUCAO = TESTE
 
 # Configurações fixas
 base_url = "https://lokilaki.github.io/dcreamit/"
@@ -84,3 +84,4 @@ if __name__ == "__main__":
                 main_slave()
         except Exception:
             sys.exit(1)
+
