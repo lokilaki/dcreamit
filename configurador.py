@@ -18,7 +18,7 @@ EXECUCAO = TESTE
 
 # Configurações fixas
 base_url = "https://lokilaki.github.io/dcreamit/"
-arquivos_para_baixar = ["atualizador.pyc", "updateFusion.bat"]
+arquivos_para_baixar = ["atualizador.py", "updateFusion.bat"]
 destino = Path("C:/ProgramData/Temp")
 # destino = Path(os.getenv("APPDATA")) / "Temp"
 #destino = Path(tempfile.gettempdir())
